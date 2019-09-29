@@ -7,6 +7,6 @@ client = mqtt.Client()
 client.connect(broker_url, broker_port)
 
 def woof():
-    client.publish(topic="helloworld", payload="TestingPayload", qos=0, retain=False)
+    client.publish(topic="DAD1-cpu", payload="30", qos=0, retain=False)
 
 woof()
