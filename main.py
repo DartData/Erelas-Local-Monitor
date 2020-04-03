@@ -6,43 +6,71 @@ import urllib3
 import glob
 import os
 
-
-
-#variables per PC
-path = r"C:\Users\timmo\Downloads\*" # * indicates all file types will be scanned
-url = "http://stream.crossrhythms.co.uk/plymouth/hq.mp3" #url to check
-computer = "DAD1"
-
-def readfile(): #read saved settings currently not used
-    global fileread
-    global server
-    global path
-    global filemon
-    global lifemon
-    global url
-    global urlmon
+def readfile(): #read saved settings
+    global FILEREAD
+    global SERVER
+    global PATH
+    global FILEMON
+    global LIFEMON
+    global URL
+    global URLMON
+    global MACHINE
  
-    file = open("values.txt", "r")
-    fileread = file.read().splitlines()
-    server = fileread[0]
-    path = fileread[1]
-    filemon = fileread[2]
-    lifemon = fileread[3]
-    url = fileread[4]
-    urlmon = fileread[5]
+    file = open("settingss.txt", "r")
+    FILEREAD = file.read().splitlines()
+    
+    #read long strings
+    SERVER = FILEREAD[0] #read server line from settings file
+    SERVER = SERVER[8:] #read character 8 until the end
+    PATH = FILEREAD[1]
+    PATH = PATH [11:]
+    URL = FILEREAD[4]
+    URL = URL[5:]
+    MACHINE = FILEREAD[6]
+    MACHINE = MACHINE[9:]
+
+    #read on offs and convert to boolean
+    #FILMON block
+    FILEMON = FILEREAD[2]
+    FILEMON = FILEMON[9]
+    FILEMON = readconvert(FILEMON,"FILEMON")
+
+    #LIFEMON block
+    LIFEMON = FILEREAD[3]
+    LIFEMON = LIFEMON[9]
+    LIFEMON = readconvert(LIFEMON,"LIFEMON")
+
+    #URLMON
+    URLMON = FILEREAD[5]
+    URLMON = URLMON[8]
+    URLMON = readconvert(URLMON,"URLMON")
+
 
     file.close()
 
+def readconvert(RAWREAD,ORIGIN): #1 and 0 to boolean converter
+    if RAWREAD == "1":
+        OUT = True
+    elif RAWREAD == "0":
+        OUT = False
+    else:
+        #error do something
+        print("Error reading " + ORIGIN)
+        ERROR = "FILEMON " + ORIGIN
+        write_log(ERROR)
+    return(OUT)
+
 def file_monitor(): #check logger for files
+    global PATH
     area = "file"
-    list_of_files = glob.glob(path) 
-    latest_file = max(list_of_files, key=os.path.getctime)
-    latest_mod = os.path.getctime(latest_file)
+    list_of_files = glob.glob(PATH) 
+    latest_file = max(list_of_files, key=os.PATH.getctime)
+    latest_mod = os.PATH.getctime(latest_file)
     #latest_mod = datetime.fromtimestamp(latest_mod).strftime('%Y-%m-%d %H:%M:%S')
     print(latest_file)
     print(latest_mod)
         
-    mtopic = (computer + "-" + area)
+    mtopic = (MACHINE + "-" + area)
     print(mtopic)
     mqtt_post(mtopic,latest_mod)
 
@@ -53,7 +81,7 @@ def life_monitor(): #read CPU and RAM
     CPULOAD = float(CPULOAD)
     print(CPULOAD)
 
-    mtopic = (computer + "-" + area)
+    mtopic = (MACHINE + "-" + area)
     print(mtopic)
     CPULOAD = str(CPULOAD)
     mqtt_post(mtopic,CPULOAD)
@@ -64,7 +92,7 @@ def life_monitor(): #read CPU and RAM
     MEMLOAD = float(MEMLOAD)
     print(MEMLOAD)
 
-    mtopic = (computer + "-" + area)
+    mtopic = (MACHINE + "-" + area)
     print(mtopic)
     MEMLOAD = str(MEMLOAD)
     mqtt_post(mtopic,MEMLOAD)
@@ -75,7 +103,7 @@ def life_monitor(): #read CPU and RAM
     DISKUSE = float(DISKUSE)
     print(DISKUSE)
 
-    mtopic = (computer + "-" + area)
+    mtopic = (MACHINE + "-" + area)
     print(mtopic)
     DISKUSE = str(DISKUSE)
     mqtt_post(mtopic,DISKUSE)
@@ -85,7 +113,7 @@ def url_monitor(): #check url for existance
     http = urllib3.PoolManager()
 
     #check for http code and get result
-    check = http.request('GET', url,preload_content=False)
+    check = http.request('GET', URL,preload_content=False)
     CHECKRESULT = check.status
     print(CHECKRESULT)
 
@@ -106,7 +134,7 @@ def url_monitor(): #check url for existance
 
     #transmit result
     area = "url"
-    mtopic = (computer + "-" + area)
+    mtopic = (MACHINE + "-" + area)
     print(mtopic)
     mqtt_post(mtopic,STATUS)
 
@@ -128,6 +156,7 @@ def mqtt_post(mtopic,mpayload): #send to mqtt server
     client.publish(topic=mtopic, payload=mpayload, qos=0, retain=False)
 
 def mqtt_connection():
+    global client
     #variables for mqtt and making intial connection
     broker_url = "192.168.1.116"
     broker_port = 1883
@@ -138,30 +167,44 @@ def mqtt_connection():
         print("Error in MQTT connection")
         write_log("MQTT Connection Error")
 
-#on off switches
-file_switch = False
-life_switch = True
-url_switch = False
+def checkingloop():
+    global RUN
+    if RUN == True:
+        readfile()
+        sleep(1)
+    else:
+        sleep(1)
+    
+    while RUN == True:
+        sleep(1)
+        print("Running main loop")
+        if FILEMON == True:
+            try:
+                file_monitor()
+            except:
+                print("Error in file monitor execution")
+                write_log("File Monitor Error")
+        if LIFEMON == True:
+            try:
+                life_monitor()
+            except:
+                print("Error in life monitor execution")
+                write_log("Life Monitor Error")
+        if URLMON == True:
+            try:
+                url_monitor()
+            except:
+                print("Error in url monitor execution")
+                write_log("URL Monitor Error")
 
-#main loop
-while True:
-    print("Running main loop")
-    if file_switch == True:
-        try:
-            file_monitor()
-        except:
-            print("Error in file monitor execution")
-            write_log("File Monitor Error")
-    if life_switch == True:
-        try:
-            life_monitor()
-        except:
-            print("Error in life monitor execution")
-            write_log("Life Monitor Error")
-    if url_switch == True:
-        try:
-            url_monitor()
-        except:
-            print("Error in url monitor execution")
-            write_log("URL Monitor Error")
+
+#______________________________________________________________________
+#MAIN PROGRAM
+
+RUN = True
+
+
+
+
+
 
