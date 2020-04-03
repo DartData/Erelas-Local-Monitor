@@ -7,18 +7,6 @@ import glob
 import os
 
 
-#variables for mqtt and making intial connection
-broker_url = "192.168.1.108"
-broker_port = 1883
-
-client = mqtt.Client()
-
-try: #attempt intial connection
-    client.connect(broker_url, broker_port)
-except: #on error write log and close
-    print("Error in MQTT connection")
-    write_log("MQTT Connection Error")
-    exit()
 
 #variables per PC
 path = r"C:\Users\timmo\Downloads\*" # * indicates all file types will be scanned
@@ -57,7 +45,6 @@ def file_monitor(): #check logger for files
     mtopic = (computer + "-" + area)
     print(mtopic)
     mqtt_post(mtopic,latest_mod)
-
 
 def life_monitor(): #read CPU and RAM
     #get CPU load
@@ -137,8 +124,20 @@ def write_log(error): #write local log of errors / start ups
 def mqtt_post(mtopic,mpayload): #send to mqtt server
     print("Posting message from " + mtopic)
     print(mpayload)
+    mqtt_connection()
     client.publish(topic=mtopic, payload=mpayload, qos=0, retain=False)
-    
+
+def mqtt_connection():
+    #variables for mqtt and making intial connection
+    broker_url = "192.168.1.116"
+    broker_port = 1883
+    client = mqtt.Client()
+    try: #attempt intial connection
+        client.connect(broker_url, broker_port)
+    except: #on error write log and close
+        print("Error in MQTT connection")
+        write_log("MQTT Connection Error")
+
 #on off switches
 file_switch = False
 life_switch = True
