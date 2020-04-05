@@ -106,43 +106,39 @@ def file_monitor(): #check logger for files
     print(latest_file)
     print(latest_mod)
         
-    mtopic = (MACHINE + "-" + area)
-    print(mtopic)
-    mqtt_post(mtopic,latest_mod)
+    MESSAGE = (area + "-" + latest_mod)
+    mqtt_post(MESSAGE)
 
 def life_monitor(): #read CPU and RAM
     #get CPU load
-    area = "cpu"
+    area = "cpul"
     CPULOAD = psutil.cpu_percent(interval=1, percpu=False)
     CPULOAD = float(CPULOAD)
+    CPULOAD = str(CPULOAD)
     print(CPULOAD)
 
-    mtopic = (MACHINE + "-" + area)
-    print(mtopic)
-    CPULOAD = str(CPULOAD)
-    mqtt_post(mtopic,CPULOAD)
+    MESSAGE = (area + "-" + CPULOAD)
+    mqtt_post(MESSAGE)
 
     #get memory load
-    area = "mem"
+    area = "memr"
     MEMLOAD = psutil.virtual_memory().percent
     MEMLOAD = float(MEMLOAD)
+    MEMLOAD = str(MEMLOAD)
     print(MEMLOAD)
 
-    mtopic = (MACHINE + "-" + area)
-    print(mtopic)
-    MEMLOAD = str(MEMLOAD)
-    mqtt_post(mtopic,MEMLOAD)
+    MESSAGE = (area + "-" + MEMLOAD)
+    mqtt_post(MESSAGE)
 
     #get disk usage
     area = "disk"
     DISKUSE = psutil.disk_usage('/').percent
     DISKUSE = float(DISKUSE)
+    DISKUSE = str(DISKUSE)
     print(DISKUSE)
 
-    mtopic = (MACHINE + "-" + area)
-    print(mtopic)
-    DISKUSE = str(DISKUSE)
-    mqtt_post(mtopic,DISKUSE)
+    MESSAGE = (area + "-" + DISKUSE)
+    mqtt_post(MESSAGE)
 
 def url_monitor(): #check url for existance
     #controls url requests
@@ -169,10 +165,9 @@ def url_monitor(): #check url for existance
     print(MEASURE)
 
     #transmit result
-    area = "url"
-    mtopic = (MACHINE + "-" + area)
-    print(mtopic)
-    mqtt_post(mtopic,STATUS)
+    area = "urlc"
+    MESSAGE = (area + "-" + STATUS)
+    mqtt_post(MESSAGE)
 
 def write_log(error): #write local log of errors / start ups
     #print(error)
@@ -200,27 +195,29 @@ def error_message(error):
     errorbutton = PushButton(errorwindow, text = "Quit", command=quit)
     errorwindow.show()
 
-def mqtt_post(mtopic,mpayload): #send to mqtt server
-    try:
-        print("Posting message from " + mtopic)
-        print(mpayload)
+def mqtt_post(mpayload): #send to mqtt server
+    #try:
+        global MACHINE
+        print("Posting message " + mpayload)
         mqtt_connection()
-        client.publish(topic=mtopic, payload=mpayload, qos=0, retain=False)
-    except:
-        error_message("mqtt_post failed")
+        print(MACHINE)
+        client.publish(MACHINE, mpayload)
+    #except:
+    #    error_message("mqtt_post failed")
 
 def mqtt_connection():
     global client
     global SERVER
+    global MACHINE
     #variables for mqtt and making intial connection
     broker_url = SERVER
-    broker_port = 1883
-    client = mqtt.Client()
-    try: #attempt intial connection
-        client.connect(broker_url, broker_port)
-    except: #on error write log and close
-        print("Error in MQTT connection")
-        error_message("mqtt connection failed")
+    client = mqtt.Client(MACHINE)
+    #try: #attempt intial connection
+    #client.connect(broker_url, broker_port)
+    client.connect(SERVER, port=1883)
+    #except: #on error write log and close
+    #    print("Error in MQTT connection")
+    #    error_message("mqtt connection failed")
 
 def checkingloop():
     global RUN
