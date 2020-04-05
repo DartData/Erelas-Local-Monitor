@@ -5,6 +5,14 @@ import psutil
 import urllib3
 import glob
 import os
+import sys
+import threading
+from guizero import App, Text, PushButton
+
+#for menu
+from pystray import MenuItem as item, Icon as icon, Menu as menu
+import pystray
+from PIL import Image
 
 def readfile(): #read saved settings
     global FILEREAD
@@ -16,7 +24,7 @@ def readfile(): #read saved settings
     global URLMON
     global MACHINE
  
-    file = open("settingss.txt", "r")
+    file = open("settings.txt", "r")
     FILEREAD = file.read().splitlines()
     
     #read long strings
@@ -197,14 +205,43 @@ def checkingloop():
                 print("Error in url monitor execution")
                 write_log("URL Monitor Error")
 
+def runtotrue():
+    global RUN
+    RUN = True
+
+def runtofalse():
+    global RUN
+    RUN = False
+
+def settingsmenu():
+    #change settings in here
+    runtofalse()
+    app = App(title="Erelas Settings")
+    closebutton = PushButton(app, text="Close", command=)
+    app.display()
+
+def on_clicked(icon, item):
+    global RUN
+    RUN = not item.checked
+    print(RUN)
+
+def quit():
+    os._exit(0)
+
+def traymenu():
+    image = Image.open("icon.png")
+    menu = (item('Run', on_clicked, checked=lambda item:RUN), item("Settings", settingsmenu), item('Quit', quit))
+    icon = pystray.Icon("name", image,"title",menu)
+    icon.run()
 
 #______________________________________________________________________
 #MAIN PROGRAM
 
 RUN = True
 
+uithread = threading.Thread(target=traymenu)
+uithread.start()
 
-
-
-
+checkthread = threading.Thread(target=checkingloop)
+checkthread.start()
 
