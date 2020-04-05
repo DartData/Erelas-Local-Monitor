@@ -177,49 +177,64 @@ def mqtt_connection():
 
 def checkingloop():
     global RUN
-    if RUN == True:
-        readfile()
+    while True:
+        try:
+            if RUN == True:
+                readfile()
+            else:
+                sleep(1)
+        except:
+            print("Error reading settings")
+            write_log("Settings File Error")
         sleep(1)
-    else:
-        sleep(1)
-    
-    while RUN == True:
-        sleep(1)
-        print("Running main loop")
-        if FILEMON == True:
-            try:
-                file_monitor()
-            except:
-                print("Error in file monitor execution")
-                write_log("File Monitor Error")
-        if LIFEMON == True:
-            try:
-                life_monitor()
-            except:
-                print("Error in life monitor execution")
-                write_log("Life Monitor Error")
-        if URLMON == True:
-            try:
-                url_monitor()
-            except:
-                print("Error in url monitor execution")
-                write_log("URL Monitor Error")
+        while RUN == True:
+            print("Running main loop")
+            if FILEMON == True:
+                try:
+                    file_monitor()
+                except:
+                    print("Error in file monitor execution")
+                    write_log("File Monitor Error")
+            if LIFEMON == True:
+                try:
+                    life_monitor()
+                except:
+                    print("Error in life monitor execution")
+                    write_log("Life Monitor Error")
+            if URLMON == True:
+                try:
+                    url_monitor()
+                except:
+                    print("Error in url monitor execution")
+                    write_log("URL Monitor Error")
+            sleep(1)
+        else:
+            sleep(1)
 
-def runtotrue():
+def closerun():
+    global app
     global RUN
     RUN = True
+    app.destroy()
 
-def runtofalse():
-    global RUN
-    RUN = False
+def closenorun():
+    global app
+    app.destroy()
+
+def savesettingsrun():
+    #do something
+    sleep(1)
 
 def settingsmenu():
     #change settings in here
-    runtofalse()
+    global RUN
+    RUN = False
+    global app
     app = App(title="Erelas Settings")
-    closebutton = PushButton(app, text="Close", command=)
+    closerunbutton = PushButton(app, text="Close and run", command= closerun)
+    closenorunbutton = PushButton(app, text="Close and don't run", command= closenorun)
     app.display()
-
+    
 def on_clicked(icon, item):
     global RUN
     RUN = not item.checked
@@ -230,9 +245,13 @@ def quit():
 
 def traymenu():
     image = Image.open("icon.png")
-    menu = (item('Run', on_clicked, checked=lambda item:RUN), item("Settings", settingsmenu), item('Quit', quit))
+    menu = (
+        item('Run', on_clicked, checked=lambda item:RUN), 
+        item("Settings", settingsmenu), item('Quit', quit)
+        )
     icon = pystray.Icon("name", image,"title",menu)
     icon.run()
+    
 
 #______________________________________________________________________
 #MAIN PROGRAM
@@ -244,4 +263,3 @@ uithread.start()
 
 checkthread = threading.Thread(target=checkingloop)
 checkthread.start()
-
