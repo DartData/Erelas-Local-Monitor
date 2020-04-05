@@ -9,7 +9,7 @@ import sys
 import threading
 
 #for gui windowa
-from guizero import App, Text, PushButton, CheckBox, TextBox
+from guizero import App, Text, PushButton, CheckBox, TextBox, Window
 
 #for menu
 from pystray import MenuItem as item, Icon as icon, Menu as menu
@@ -187,18 +187,18 @@ def write_log(error): #write local log of errors / start ups
 
 def error_message(error):
     #write a log and display an error
+    global errorwindow
 
     error = "Error in " + error
 
     write_log(error)
     
-    errorapp = App(title= "Error occured")
-    errortext = Text(errorapp, text="Error occured in the following-")
-    errortext2 = Text(errorapp, text=error)
-    errortext3 = Text(errorapp, text="The application must now terminate")
-    errortext4 = Text(errorapp, text="For support please visit https://github.com/moth754/Erelas-Local-Monitor")
-    errorbutton = PushButton(errorapp, text = "Quit", command=quit)
-    errorapp.display()
+    errortext = Text(errorwindow, text="Error occured in the following-")
+    errortext2 = Text(errorwindow, text=error)
+    errortext3 = Text(errorwindow, text="The application must now terminate")
+    errortext4 = Text(errorwindow, text="For support please visit https://github.com/moth754/Erelas-Local-Monitor")
+    errorbutton = PushButton(errorwindow, text = "Quit", command=quit)
+    errorwindow.show()
 
 def mqtt_post(mtopic,mpayload): #send to mqtt server
     try:
@@ -224,12 +224,12 @@ def mqtt_connection():
 
 def checkingloop():
     global RUN
+    firstrunsequence()
     while True:
         if RUN == True:
             readfile()
         else:
             sleep(1)
-
         while RUN == True:
             print("Running main loop")
             if FILEMON == True:
@@ -246,14 +246,17 @@ def closerun():
     try:
         global app
         global RUN
+        global settingswindow
         RUN = True
-        app.destroy()
+        settingswindow.hide()
     except:
         error_message("closerun failed")
 
 def closenorun():
     try:
         global app
+        global settingswindow
+        settingswindow.hide()
         app.destroy()
     except:
         error_message("closenorun failed")
@@ -267,7 +270,7 @@ def savesettings():
         if FIRSTRUN == True:
             FIRSTRUN = False
             RUN = True
-
+        
         FIRSTRUN = booltoint(FIRSTRUN, "Saving settings")
 
         #global variables from inputs
@@ -362,7 +365,8 @@ def settingsmenu():
         global SERVER
         global serverinput
         global machineinput
-        global firstapp
+        global firstwindow
+        global settingswindow
 
         RUN = False
 
@@ -375,57 +379,57 @@ def settingsmenu():
         URLMON_INT = booltoint(URLMON, ORIGIN)
         
         #setup settings UI
-        app = App(title="Erelas Settings")
+        settingswindow = Window(app, title="Erelas monitoring system - settings")
 
         #machine name settings
-        machineinput = TextBox(app)
+        machineinput = TextBox(settingswindow)
         machineinput.value = MACHINE
         
         #server settings
-        serverinput = TextBox(app)
+        serverinput = TextBox(settingswindow)
         serverinput.value = SERVER
 
         #life monitor section
-        lifemoncheck = CheckBox(app, text = "Report CPU use")
+        lifemoncheck = CheckBox(settingswindow, text = "Report CPU use")
         lifemoncheck.value = LIFEMON_INT
 
         #url monitor section
-        urlmoncheck = CheckBox(app, text = "Report URL status")
+        urlmoncheck = CheckBox(settingswindow, text = "Report URL status")
         urlmoncheck.value = URLMON_INT
-        urlinput = TextBox(app)
+        urlinput = TextBox(settingswindow)
         urlinput.value = URL
 
         #file monitor sections
-        filemoncheck = CheckBox(app, text = "Report most recent file update")
+        filemoncheck = CheckBox(settingswindow, text = "Report most recent file update")
         filemoncheck.value = FILEMON_INT
-        pathinput = TextBox(app)
+        pathinput = TextBox(settingswindow)
         pathinput.value = PATH
 
         if FIRSTRUN == True:
-            firstapp.destroy()
-            savebutton = PushButton(app, text="Save and run", command = savesettings)
-            quitbutton = PushButton(app, text="Quit", command= quit)
+            firstwindow.hide()
+            savebutton = PushButton(settingswindow, text="Save and run", command = savesettings)
+            quitbutton = PushButton(settingswindow, text="Quit", command= quit)
         else:
             #save section
-            savebutton = PushButton(app, text="Save and apply changes", command = savesettings)
-            resetbutton = PushButton(app, text="Discard changes and reset to previous values", command= resetsettings)
+            savebutton = PushButton(settingswindow, text="Save and apply changes", command = savesettings)
+            resetbutton = PushButton(settingswindow, text="Discard changes and reset to previous values", command= resetsettings)
 
             #quit section
-            closerunbutton = PushButton(app, text="Close and run", command= closerun)
-            closenorunbutton = PushButton(app, text="Close and don't run", command= closenorun)
+            closerunbutton = PushButton(settingswindow, text="Close and run", command= closerun)
+            closenorunbutton = PushButton(settingswindow, text="Close and don't run", command= closenorun)
         
-        
-        app.display()
+    except:    
+        settingswindow.show()
     
-    except:
-        error_message("Settingsmenu has failed")
+    
+        #error_message("Settingsmenu has failed")
 
 def about():
+    global aboutwindow
     try:
-        firstapp = App(title= "About")
-        abouttext = Text(firstapp, text="About")
-        aboutbutton = PushButton(firstapp, text = "Close", command=firstapp.destroy)
-        firstapp.display()
+        abouttext = Text(aboutwindow, text="About")
+        aboutbutton = PushButton(aboutwindow, text = "Close", command=aboutwindow.hide)
+        aboutwindow.show()
     except:
         error_message("about failed")
 
@@ -457,25 +461,51 @@ def traymenu():
     except:
         error_message("traymenu failed")
 
+def firstrunsequence():
+    global RUN
+    RUN = False
+    splashscreen()
+    if FIRSTRUN == True:
+        firsttext = Text(firstwindow, text="First Run")
+        firstclose = PushButton(firstwindow, text = "Quit", command=quit)
+        firstbutton = PushButton(firstwindow, text = "Setup", command=settingsmenu)
+        firstwindow.show()
+        write_log("First time run")
+    else:
+        RUN = True
+        write_log("Program started and RUN == True")
+
+def splashscreen():
+    #show splashscreen
+    splashwindow = Window(app, "Erelas monitoring system")
+    splashtext = Text(splashwindow, text="Device status monitored by Erelas monitoring system")
+    splashtext2 = Text(splashwindow, text = "https://github.com/moth754/Erelas-Local-Monitor")
+    splashwindow.show()
+    sleep(3)
+    splashwindow.hide()
+
 #______________________________________________________________________
 #MAIN PROGRAM
 
-#first run
-readfile()
+readfile() #read the settings
 
-if FIRSTRUN == True:
-    firstapp = App(title= "First Run")
-    firsttext = Text(firstapp, text="First Run")
-    firstclose = PushButton(firstapp, text = "Quit", command=quit)
-    firstbutton = PushButton(firstapp, text = "Setup", command=settingsmenu)
-    firstapp.display()
-    write_log("First time run")
-else:
-    RUN = True
-    write_log("Program started and RUN == True")
+#setup the ui
+app = App(title = "Erelas monitoring system", visible = False)
+settingswindow = Window(app, title="Erelas monitoring system - settings")
+settingswindow.hide()
+aboutwindow = Window(app, title= "About")
+aboutwindow.hide()
+errorwindow = Window(app, title= "Error occured")
+errorwindow.hide()
+firstwindow = Window(app, title="Erelas monitoring system - first run")
+firstwindow.hide()
 
+#intiate the threads
 uithread = threading.Thread(target=traymenu)
 uithread.start()
 
 checkthread = threading.Thread(target=checkingloop)
 checkthread.start()
+
+#intitiate display
+app.display()
