@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, ctime
 from datetime import datetime
 import paho.mqtt.client as mqtt
 import psutil
@@ -8,8 +8,12 @@ import os
 import sys
 import threading
 
-#for gui windowa
+#for gui windows
 from guizero import App, Text, PushButton, CheckBox, TextBox, Window
+
+#setting up icon
+#import tkinter as Tk # for changing icon
+
 
 #for menu
 from pystray import MenuItem as item, Icon as icon, Menu as menu
@@ -99,12 +103,16 @@ def booltoint(RAWREAD,ORIGIN):
 def file_monitor(): #check logger for files
     global PATH
     area = "file"
-    list_of_files = glob.glob(PATH) 
-    latest_file = max(list_of_files, key=os.PATH.getctime)
-    latest_mod = os.PATH.getctime(latest_file)
-    #latest_mod = datetime.fromtimestamp(latest_mod).strftime('%Y-%m-%d %H:%M:%S')
+
+    list_of_files = glob.glob(PATH)
+    latest_file = max(list_of_files, key=os.path.getctime)
+    latest_mod = os.path.getctime(latest_file)
+    latest_mod = ctime(latest_mod)
+    
     print(latest_file)
     print(latest_mod)
+
+    
         
     MESSAGE = (area + "-" + latest_mod)
     mqtt_post(MESSAGE)
@@ -279,13 +287,13 @@ def savesettings():
         global serverinput
         global machineinput
 
-        L1 = "server: " + serverinput.value + " \n"
-        L2 = "directory: " + pathinput.value  + " \n"
-        L3 = "filemon: " + str(filemoncheck.value)  + " \n"
-        L4 = "lifemon: " + str(lifemoncheck.value)  + " \n"
-        L5 = "url: " + urlinput.value  + " \n"
-        L6 = "urlmon: " + str(urlmoncheck.value)  + " \n"
-        L7 = "machine: " + machineinput.value  + " \n"
+        L1 = ("server: " + serverinput.value + "\n").rstrip()
+        L2 = ("directory: " + pathinput.value  + "\n").rstrip()
+        L3 = "filemon: " + str(filemoncheck.value)  + "\n"
+        L4 = "lifemon: " + str(lifemoncheck.value)  + "\n"
+        L5 = "url: " + urlinput.value  + "\n"
+        L6 = "urlmon: " + str(urlmoncheck.value)  + "\n"
+        L7 = "machine: " + machineinput.value  + "\n"
         L8 = "firstrun: " + str(FIRSTRUN)
 
         TOSAVE = [L1,L2,L3,L4,L5,L6,L7,L8]
@@ -344,7 +352,7 @@ def resetsettings(): #sets all the UI input fields to the same as previously sav
         error_message("resetsettings failed")
 
 def settingsmenu():
-    try:
+    #try:
         #change settings in here
         global RUN
         global MACHINE
@@ -376,49 +384,54 @@ def settingsmenu():
         URLMON_INT = booltoint(URLMON, ORIGIN)
         
         #setup settings UI
-        settingswindow = Window(app, title="Erelas monitoring system - settings")
+        #settingswindow = Window(app, title="Erelas monitoring system - settings")
 
         #machine name settings
-        machineinput = TextBox(settingswindow)
+        machinetext = Text(settingswindow, text = "Machine name", grid=[0,0])
+        machineinput = TextBox(settingswindow, grid= [1,0])
         machineinput.value = MACHINE
         
         #server settings
-        serverinput = TextBox(settingswindow)
+        servertext = Text(settingswindow, text = "Server IP address", grid=[0,1])
+        serverinput = TextBox(settingswindow, grid=[1,1])
         serverinput.value = SERVER
 
         #life monitor section
-        lifemoncheck = CheckBox(settingswindow, text = "Report CPU use")
+        lifemontext = Text(settingswindow, text = "Activate CPU / RAM / disk monitor", grid=[0,2])
+        lifemoncheck = CheckBox(settingswindow, text = "Report CPU use", grid=[1,2])
         lifemoncheck.value = LIFEMON_INT
 
         #url monitor section
-        urlmoncheck = CheckBox(settingswindow, text = "Report URL status")
+        urlmontext = Text(settingswindow, text = "Activate URL monitor", grid=[0,3])
+        urlmoncheck = CheckBox(settingswindow, text = "Report URL status", grid = [1,3])
         urlmoncheck.value = URLMON_INT
-        urlinput = TextBox(settingswindow)
+        urlinputtext = Text(settingswindow, text = "Enter URL to monitor", grid=[0,4])
+        urlinput = TextBox(settingswindow, grid=[1,4])
         urlinput.value = URL
 
         #file monitor sections
-        filemoncheck = CheckBox(settingswindow, text = "Report most recent file update")
+        filemontext = Text(settingswindow, text = "Activate file modified monitor", grid=[0,5])
+        filemoncheck = CheckBox(settingswindow, text = "Report most recent file update", grid=[1,5])
         filemoncheck.value = FILEMON_INT
-        pathinput = TextBox(settingswindow)
+        pathinputtext = Text(settingswindow, text = "Path to monitor files at", grid=[0,6])
+        pathinput = TextBox(settingswindow, grid=[1,6])
         pathinput.value = PATH
 
         if FIRSTRUN == True:
             firstwindow.hide()
-            savebutton = PushButton(settingswindow, text="Save and run", command = savesettings)
-            quitbutton = PushButton(settingswindow, text="Quit", command= quit)
+            savebutton = PushButton(settingswindow, text="Save and run", command = savesettings, grid=[0,7])
+            quitbutton = PushButton(settingswindow, text="Quit", command= quit, grid= [1,7])
         else:
             #save section
-            savebutton = PushButton(settingswindow, text="Save and apply changes", command = savesettings)
-            resetbutton = PushButton(settingswindow, text="Discard changes and reset to previous values", command= resetsettings)
+            savebutton = PushButton(settingswindow, text="Save and apply changes", command = savesettings, grid=[0,7])
+            resetbutton = PushButton(settingswindow, text="Discard changes and reset to previous values", command= resetsettings, grid = [1,7])
 
             #quit section
-            closerunbutton = PushButton(settingswindow, text="Close and run", command= closerun)
-            closenorunbutton = PushButton(settingswindow, text="Close and don't run", command= closenorun)
-        
-    except:    
+            closerunbutton = PushButton(settingswindow, text="Close and run", command= closerun, grid=[0,8])
+            closenorunbutton = PushButton(settingswindow, text="Close and don't run", command= closenorun, grid=[1,8])
         settingswindow.show()
-    
-    
+
+    #except:    
         #error_message("Settingsmenu has failed")
 
 def about():
@@ -444,6 +457,7 @@ def quit():
     os._exit(0)
 
 def traymenu():
+    global RUN
     try:
         image = Image.open("icon.png")
         menu = (
@@ -474,7 +488,7 @@ def firstrunsequence():
 
 def splashscreen():
     #show splashscreen
-    splashwindow = Window(app, "Erelas monitoring system")
+    splashwindow = Window(app, "Erelas monitoring system", width=450, height = 100)
     splashtext = Text(splashwindow, text="Device status monitored by Erelas monitoring system")
     splashtext2 = Text(splashwindow, text = "https://github.com/moth754/Erelas-Local-Monitor")
     splashwindow.show()
@@ -486,9 +500,13 @@ def splashscreen():
 
 readfile() #read the settings
 
+RUN = True
+
 #setup the ui
 app = App(title = "Erelas monitoring system", visible = False)
-settingswindow = Window(app, title="Erelas monitoring system - settings")
+#app.tk.iconbitmap("icon.ico")
+
+settingswindow = Window(app, title="Erelas monitoring system - settings", layout="grid")
 settingswindow.hide()
 aboutwindow = Window(app, title= "About")
 aboutwindow.hide()

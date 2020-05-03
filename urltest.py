@@ -1,27 +1,13 @@
-from pystray import MenuItem as item, Icon as icon, Menu as menu
-import pystray
-from PIL import Image
-import sys
+import glob
+import os
+from time import sleep, ctime
 
-def runtotrue():
-    global RUN
-    RUN = True
+PATH = r"C:\Users\timmo\Downloads\*"
 
-def runtofalse():
-    global RUN
-    RUN = False
-
-
-
-state = False
-
-#______________________________________________________________________
-#MAIN PROGRAM
-
-RUN = True
-
-image = Image.open("icon.png")
-menu = (item('Run', on_clicked, checked=lambda item:state), item('Quit', quit))
-icon = pystray.Icon("name", image,"title",menu)
-
-icon.run()
+list_of_files = glob.glob(PATH)
+latest_file = max(list_of_files, key=os.path.getctime)
+latest_mod = os.path.getctime(latest_file)
+latest_mod = ctime(latest_mod)
+#latest_mod = datetime.fromtimestamp(latest_mod).strftime('%Y-%m-%d %H:%M:%S')
+print(latest_file)
+print(latest_mod)
